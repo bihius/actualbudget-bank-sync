@@ -1,0 +1,26 @@
+services:
+  actual-eb-sync:
+    build: .
+    container_name: actual-eb-sync
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+      - ./keys:/keys:ro
+    env_file: .env.local
+    environment:
+      ENABLE_BANKING_APP_ID: "${ENABLE_BANKING_APP_ID}"
+      ENABLE_BANKING_KEY_PATH: /keys/private.pem
+      ACTUAL_SERVER_URL: "${ACTUAL_SERVER_URL:-http://actual:5006}"
+      ACTUAL_PASSWORD: "${ACTUAL_PASSWORD}"
+      ACTUAL_SYNC_ID: "${ACTUAL_SYNC_ID}"
+      REDIRECT_BASE_URL: "${REDIRECT_BASE_URL}"
+      SYNC_CRON: "${SYNC_CRON:-0 */6 * * *}"
+      PORT: "${PORT:-3000}"
+    networks:
+      - actual_default
+
+networks:
+  actual_default:
+    external: true
