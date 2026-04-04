@@ -2,7 +2,7 @@
 
 > Automatic bank transaction sync from **Enable Banking** (PSD2/Open Banking) to **Actual Budget**.
 
-Connect your bank once via a simple web UI — transactions appear in Actual Budget automatically, every 6 hours. Supports 2,500+ banks across 30+ EU countries.
+Connect your bank once via a simple web UI — transactions appear in Actual Budget automatically, every 6 hours. Supports 2,500+ banks across 30+ EU countries (Revolut, N26, Monzo, ING, Deutsche Bank, BNP Paribas, mBank, and more).
 
 ---
 
@@ -28,27 +28,6 @@ Your Bank ──── PSD2 OAuth ────> Enable Banking API
 1. Authorize your bank in the web UI (OAuth redirect, just like any banking app)
 2. Map the bank account to an Actual Budget account (or create a new one)
 3. Transactions sync automatically — deduplicated, cleared, with proper payee names
-
----
-
-## Supported banks (examples)
-
-Enable Banking covers 2,500+ banks across 30+ countries. A few examples:
-
-| Country | Banks |
-|---|---|
-| 🇵🇱 Poland | mBank, ING, PKO BP, Pekao, Santander, BNP Paribas, Alior, Revolut |
-| 🇩🇪 Germany | Deutsche Bank, Sparkasse, Commerzbank, DKB, N26, ING DE |
-| 🇫🇷 France | BNP Paribas, Crédit Agricole, Société Générale, La Banque Postale |
-| 🇬🇧 United Kingdom | HSBC, Barclays, Lloyds, NatWest, Santander UK, Monzo |
-| 🇳🇱 Netherlands | ING, Rabobank, ABN AMRO, Bunq |
-| 🇪🇸 Spain | Santander, BBVA, CaixaBank, Bankinter |
-| 🇮🇹 Italy | UniCredit, Intesa Sanpaolo, Fineco |
-| 🇸🇪 Sweden | Nordea, SEB, Handelsbanken, Swedbank |
-| 🇱🇹 Lithuania | Swedbank, SEB, Luminor, Revolut |
-| 🇨🇿 Czech Republic | Česká spořitelna, ČSOB, Komerční banka, Raiffeisenbank |
-
-Full list available in your Enable Banking dashboard.
 
 ---
 
