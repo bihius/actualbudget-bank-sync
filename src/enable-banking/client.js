@@ -20,11 +20,13 @@ export class EnableBankingClient {
     };
     if (body) opts.body = JSON.stringify(body);
 
-    for (let attempt = 0; attempt < 3; attempt++) {
+    const RETRY_DELAYS = [30000, 60000, 120000];
+    for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
       const res = await fetch(url, opts);
       if (res.status === 429) {
-        const wait = Math.pow(2, attempt) * 1000;
-        console.warn(`Rate limited, retrying in ${wait}ms...`);
+        const retryAfter = res.headers.get('Retry-After');
+        const wait = retryAfter ? parseInt(retryAfter, 10) * 1000 : RETRY_DELAYS[attempt];
+        console.warn(`Rate limited (attempt ${attempt + 1}), retrying in ${wait / 1000}s...`);
         await new Promise(r => setTimeout(r, wait));
         continue;
       }
@@ -34,7 +36,7 @@ export class EnableBankingClient {
       }
       return res.json();
     }
-    throw new Error(`Enable Banking ${method} ${path} failed after 3 retries (429)`);
+    throw new Error(`Enable Banking ${method} ${path} failed after ${RETRY_DELAYS.length} retries (429)`);
   }
 
   async getAspsps(country) {
