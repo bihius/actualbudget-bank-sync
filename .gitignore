@@ -1,6 +1,7 @@
 node_modules/
 data/
 keys/
-.env.local
+.env
+.env.*
 *.pem
 CLAUDE.md
