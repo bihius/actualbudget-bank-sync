@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { randomUUID } from 'crypto';
+import { syncAll } from '../sync/syncer.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const viewsDir = join(__dirname, 'views');
@@ -218,7 +219,6 @@ export function createRouter({ enableClient, actualClient, store, config }) {
 
   // Manual sync
   router.post('/sync/now', async (req, res) => {
-    const { syncAll } = await import('../sync/syncer.js');
     try {
       const results = await syncAll(enableClient, actualClient, store);
       res.json(results);
