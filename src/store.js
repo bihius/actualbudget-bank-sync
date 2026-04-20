@@ -12,12 +12,28 @@ export class Store {
     if (existsSync(this.path)) {
       this.state = JSON.parse(readFileSync(this.path, 'utf8'));
     }
+    // Ensure all state keys exist
+    this.state.sessions = this.state.sessions || {};
+    this.state.accountMappings = this.state.accountMappings || [];
+    this.state.syncLogs = this.state.syncLogs || [];
   }
 
   save() {
     const tmp = this.path + '.tmp';
     writeFileSync(tmp, JSON.stringify(this.state, null, 2));
     renameSync(tmp, this.path);
+  }
+
+  addSyncLog(log) {
+    this.state.syncLogs = [
+      { timestamp: new Date().toISOString(), ...log },
+      ...(this.state.syncLogs || []),
+    ].slice(0, 10);
+    this.save();
+  }
+
+  getSyncLogs() {
+    return this.state.syncLogs || [];
   }
 
   addSession(session) {

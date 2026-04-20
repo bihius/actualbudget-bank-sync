@@ -76,5 +76,6 @@ export async function syncAll(enableClient, actualClient, store) {
     syncing = false;
   }
 
+  store.addSyncLog({ results });
   return { results };
 }

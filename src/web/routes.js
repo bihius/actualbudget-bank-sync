@@ -65,6 +65,18 @@ export function createRouter({ enableClient, actualClient, store, config }) {
       return { ...m, expired, displayName, validUntil: session?.validUntil };
     });
 
+    const syncLogs = store.getSyncLogs().map(log => {
+      const time = new Date(log.timestamp).toLocaleString();
+      const details = log.results.map(r => {
+        const m = mappings.find(map => map.id === r.mapping);
+        const name = m ? m.displayName : 'Unknown';
+        if (r.status === 'error') return `${name}: ERROR (${r.error})`;
+        if (r.status === 'expired') return `${name}: Session Expired`;
+        return `${name}: +${r.added}, updated ${r.updated}`;
+      }).join('; ');
+      return `<div class="log-entry"><strong>${time}</strong>: ${details}</div>`;
+    }).join('') || '<p style="color:#888;font-size:0.9rem">No sync history yet</p>';
+
     let html = readView('index.html');
     let rows = '';
     if (mappings.length === 0) {
@@ -90,7 +102,7 @@ export function createRouter({ enableClient, actualClient, store, config }) {
         </tr>`;
       }
     }
-    html = html.replace('{{ROWS}}', rows);
+    html = html.replace('{{ROWS}}', rows).replace('{{SYNC_LOGS}}', syncLogs);
     res.send(html);
   });
 
