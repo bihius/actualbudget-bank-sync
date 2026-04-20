@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Store } from './store.js';
 import * as fs from 'fs';
-import { join } from 'path';
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),

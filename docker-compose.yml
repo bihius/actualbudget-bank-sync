@@ -1,26 +1,29 @@
 services:
   actual-eb-sync:
+    image: ghcr.io/${GITHUB_REPOSITORY:-bihius/actualbudget-bank-sync}:latest
     build: .
     container_name: actual-eb-sync
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     volumes:
       - ./data:/data
       - ./keys:/keys:ro
-    env_file: .env
+    env_file:
+      - .env
+    # Environment variables can also be set directly, overriding .env
     environment:
-      ENABLE_BANKING_APP_ID: "${ENABLE_BANKING_APP_ID}"
-      ENABLE_BANKING_KEY_PATH: /keys/private.pem
-      ACTUAL_SERVER_URL: "${ACTUAL_SERVER_URL:-http://actual:5006}"
-      ACTUAL_PASSWORD: "${ACTUAL_PASSWORD}"
-      ACTUAL_SYNC_ID: "${ACTUAL_SYNC_ID}"
-      REDIRECT_BASE_URL: "${REDIRECT_BASE_URL}"
-      SYNC_CRON: "${SYNC_CRON:-0 */6 * * *}"
-      PORT: "${PORT:-3000}"
+      - NODE_ENV=production
     networks:
       - actual_default
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
 networks:
   actual_default:
+    name: actual_default
     external: true
