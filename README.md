@@ -105,6 +105,12 @@ In your Enable Banking Control Panel -> Application -> Redirect URIs, add your c
 
 Make sure your Docker network is configured correctly (if Actual Budget runs on the same host, they must share a Docker network, e.g., `actual_default`).
 
+**Note on Permissions (Linux):**
+The container runs as a non-root user (UID 1001). If you encounter permission errors, run the following on your host:
+```bash
+sudo chown -R 1001:1001 data keys
+```
+
 ```bash
 docker compose up -d
 docker compose logs -f
