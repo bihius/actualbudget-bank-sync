@@ -1,4 +1,5 @@
 import { generateJWT } from './jwt.js';
+import logger from '../logger.js';
 
 const BASE_URL = 'https://api.enablebanking.com';
 
@@ -25,9 +26,9 @@ export class EnableBankingClient {
       const res = await fetch(url, opts);
       if (res.status === 429) {
         const retryAfter = res.headers.get('Retry-After');
-        const wait = retryAfter ? parseInt(retryAfter, 10) * 1000 : (RETRY_DELAYS[attempt] || 600000);
-        console.warn(`Rate limited (attempt ${attempt + 1}), retrying in ${wait / 1000}s...`);
-        await new Promise(r => setTimeout(r, wait));
+        const wait = retryAfter ? parseInt(retryAfter, 10) * 1000 : RETRY_DELAYS[attempt] || 600000;
+        logger.warn(`Rate limited (attempt ${attempt + 1}), retrying in ${wait / 1000}s...`);
+        await new Promise((r) => setTimeout(r, wait));
         continue;
       }
       if (!res.ok) {
@@ -36,7 +37,9 @@ export class EnableBankingClient {
       }
       return res.json();
     }
-    throw new Error(`Enable Banking ${method} ${path} failed after ${RETRY_DELAYS.length + 1} attempts (429)`);
+    throw new Error(
+      `Enable Banking ${method} ${path} failed after ${RETRY_DELAYS.length + 1} attempts (429)`
+    );
   }
 
   async getAspsps(country) {
@@ -57,7 +60,7 @@ export class EnableBankingClient {
       redirect_url: redirectUrl,
       psu_type: 'personal',
     };
-    console.log('startAuth body:', JSON.stringify(body));
+    logger.info({ body }, 'startAuth body');
     return this._request('POST', '/auth', body);
   }
 
@@ -84,7 +87,7 @@ export class EnableBankingClient {
       continuationKey = res.continuation_key || null;
       if (continuationKey) {
         // Small delay between pages to avoid hitting rate limits too fast
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise((r) => setTimeout(r, 2000));
       }
     } while (continuationKey);
     return all;

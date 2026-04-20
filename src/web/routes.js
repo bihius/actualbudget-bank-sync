@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { randomUUID } from 'crypto';
 import { syncAll } from '../sync/syncer.js';
+import logger from '../logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const viewsDir = join(__dirname, 'views');
@@ -54,38 +55,50 @@ export function createRouter({ enableClient, actualClient, store, config }) {
     try {
       actualAccounts = await actualClient.getAccounts();
     } catch (err) {
-      console.error('Failed to fetch actual accounts for dashboard:', err.message);
+      logger.error({ err }, 'Failed to fetch actual accounts for dashboard');
     }
 
-    const mappings = store.getAccountMappings().map(m => {
+    const mappings = store.getAccountMappings().map((m) => {
       const session = store.getSession(m.sessionId);
       const expired = !session || new Date(session.validUntil) < new Date();
-      const actualAcc = actualAccounts.find(a => a.id === m.actualAccountId);
-      const displayName = actualAcc ? actualAcc.name : (m.bankName === 'Bank' ? 'Unknown Bank' : m.bankName);
+      const actualAcc = actualAccounts.find((a) => a.id === m.actualAccountId);
+      const displayName = actualAcc
+        ? actualAcc.name
+        : m.bankName === 'Bank'
+          ? 'Unknown Bank'
+          : m.bankName;
       return { ...m, expired, displayName, validUntil: session?.validUntil };
     });
 
-    const syncLogs = store.getSyncLogs().map(log => {
-      const time = new Date(log.timestamp).toLocaleString();
-      const details = log.results.map(r => {
-        const m = mappings.find(map => map.id === r.mapping);
-        const name = m ? m.displayName : 'Unknown';
-        if (r.status === 'error') return `${name}: ERROR (${r.error})`;
-        if (r.status === 'expired') return `${name}: Session Expired`;
-        return `${name}: +${r.added}, updated ${r.updated}`;
-      }).join('; ');
-      return `<div class="log-entry"><strong>${time}</strong>: ${details}</div>`;
-    }).join('') || '<p style="color:#888;font-size:0.9rem">No sync history yet</p>';
+    const syncLogs =
+      store
+        .getSyncLogs()
+        .map((log) => {
+          const time = new Date(log.timestamp).toLocaleString();
+          const details = log.results
+            .map((r) => {
+              const m = mappings.find((map) => map.id === r.mapping);
+              const name = m ? m.displayName : 'Unknown';
+              if (r.status === 'error') return `${name}: ERROR (${r.error})`;
+              if (r.status === 'expired') return `${name}: Session Expired`;
+              return `${name}: +${r.added}, updated ${r.updated}`;
+            })
+            .join('; ');
+          return `<div class="log-entry"><strong>${time}</strong>: ${details}</div>`;
+        })
+        .join('') || '<p style="color:#888;font-size:0.9rem">No sync history yet</p>';
 
     let html = readView('index.html');
     let rows = '';
     if (mappings.length === 0) {
-      rows = '<tr><td colspan="4" style="text-align:center;color:#888">No bank connections yet</td></tr>';
+      rows =
+        '<tr><td colspan="4" style="text-align:center;color:#888">No bank connections yet</td></tr>';
     } else {
       for (const m of mappings) {
         let nameHtml = `<strong>${m.displayName}</strong>`;
         if (m.expired) {
-          nameHtml += '<br><span style="color:#e74c3c;font-size:0.8rem;font-weight:bold">Expired - Reconnect needed</span>';
+          nameHtml +=
+            '<br><span style="color:#e74c3c;font-size:0.8rem;font-weight:bold">Expired - Reconnect needed</span>';
         } else if (m.validUntil) {
           const expiryDate = new Date(m.validUntil).toLocaleDateString();
           nameHtml += `<br><span style="color:#7f8c8d;font-size:0.75rem">Session valid until: ${expiryDate}</span>`;
@@ -114,15 +127,16 @@ export function createRouter({ enableClient, actualClient, store, config }) {
   router.get('/connect', async (req, res) => {
     const { country } = req.query;
 
-    const countryOptions = SUPPORTED_COUNTRIES.map(c =>
-      `<option value="${c.code}"${country === c.code ? ' selected' : ''}>${c.name} (${c.code})</option>`
+    const countryOptions = SUPPORTED_COUNTRIES.map(
+      (c) =>
+        `<option value="${c.code}"${country === c.code ? ' selected' : ''}>${c.name} (${c.code})</option>`
     ).join('\n');
 
     let cards = '';
     if (country) {
       try {
         const result = await enableClient.getAspsps(country);
-        const banks = (Array.isArray(result) ? result : result?.aspsps || []);
+        const banks = Array.isArray(result) ? result : result?.aspsps || [];
         for (const bank of banks) {
           const name = bank.name || bank.aspsp_name || 'Unknown';
           cards += `<div class="bank-card">
@@ -171,7 +185,9 @@ export function createRouter({ enableClient, actualClient, store, config }) {
       store.addSession({
         sessionId: session.session_id,
         aspspName: req.query.aspsp_name || 'Bank',
-        validUntil: session.access?.valid_until || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+        validUntil:
+          session.access?.valid_until ||
+          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
         accounts: session.accounts || [],
         createdAt: new Date().toISOString(),
       });
@@ -217,13 +233,18 @@ export function createRouter({ enableClient, actualClient, store, config }) {
 
   // Save mapping
   router.post('/map', async (req, res) => {
-    const { sessionId, enableAccountUid, iban, newAccountName, newAccountType, newAccountBalance } = req.body;
+    const { sessionId, enableAccountUid, iban, newAccountName, newAccountType, newAccountBalance } =
+      req.body;
     let { actualAccountId } = req.body;
     const session = store.getSession(sessionId);
 
     if (newAccountName) {
       const balance = newAccountBalance ? Math.round(parseFloat(newAccountBalance) * 100) : 0;
-      actualAccountId = await actualClient.createAccount(newAccountName, newAccountType || 'checking', balance);
+      actualAccountId = await actualClient.createAccount(
+        newAccountName,
+        newAccountType || 'checking',
+        balance
+      );
     }
 
     if (!actualAccountId) {
@@ -247,13 +268,14 @@ export function createRouter({ enableClient, actualClient, store, config }) {
     // Check if already syncing
     // We can't await syncAll here because it takes too long
     // But we can fire it off
-    actualClient.sync()
+    actualClient
+      .sync()
       .then(() => syncAll(enableClient, actualClient, store))
-      .then(results => {
-        console.log('Manual background sync complete:', JSON.stringify(results));
+      .then((results) => {
+        logger.info({ results }, 'Manual background sync complete');
       })
-      .catch(err => {
-        console.error('Manual background sync failed:', err);
+      .catch((err) => {
+        logger.error({ err }, 'Manual background sync failed');
       });
 
     res.json({ status: 'started' });
@@ -273,7 +295,7 @@ export function createRouter({ enableClient, actualClient, store, config }) {
 
   // Status API
   router.get('/api/status', (req, res) => {
-    const mappings = store.getAccountMappings().map(m => {
+    const mappings = store.getAccountMappings().map((m) => {
       const session = store.getSession(m.sessionId);
       return {
         ...m,

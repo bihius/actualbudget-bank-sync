@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, renameSync, existsSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import logger from './logger.js';
 
 export class Store {
   constructor(dataDir) {
@@ -14,7 +15,7 @@ export class Store {
         const loaded = JSON.parse(readFileSync(this.path, 'utf8'));
         this.state = { ...this.state, ...loaded };
       } catch (err) {
-        console.error('Failed to parse state.json:', err.message);
+        logger.error({ err }, 'Failed to parse state.json');
       }
     }
     // Ensure all state keys exist
@@ -56,7 +57,7 @@ export class Store {
 
   removeSession(id) {
     delete this.state.sessions[id];
-    this.state.accountMappings = this.state.accountMappings.filter(m => m.sessionId !== id);
+    this.state.accountMappings = this.state.accountMappings.filter((m) => m.sessionId !== id);
     this.save();
   }
 
@@ -72,7 +73,7 @@ export class Store {
   }
 
   updateLastSyncDate(id, date) {
-    const m = this.state.accountMappings.find(m => m.id === id);
+    const m = this.state.accountMappings.find((m) => m.id === id);
     if (m) {
       m.lastSyncDate = date;
       this.save();
@@ -80,12 +81,15 @@ export class Store {
   }
 
   removeAccountMapping(id) {
-    this.state.accountMappings = this.state.accountMappings.filter(m => m.id !== id);
+    this.state.accountMappings = this.state.accountMappings.filter((m) => m.id !== id);
     this.save();
   }
 
   resetSyncDate(id) {
-    const m = this.state.accountMappings.find(m => m.id === id);
-    if (m) { m.lastSyncDate = null; this.save(); }
+    const m = this.state.accountMappings.find((m) => m.id === id);
+    if (m) {
+      m.lastSyncDate = null;
+      this.save();
+    }
   }
 }
