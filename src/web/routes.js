@@ -217,15 +217,21 @@ export function createRouter({ enableClient, actualClient, store, config }) {
     res.redirect('/');
   });
 
-  // Manual sync
-  router.post('/sync/now', async (req, res) => {
-    try {
-      await actualClient.sync();
-      const results = await syncAll(enableClient, actualClient, store);
-      res.json(results);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+  // Manual sync - run in background to prevent timeouts
+  router.post('/sync/now', (req, res) => {
+    // Check if already syncing
+    // We can't await syncAll here because it takes too long
+    // But we can fire it off
+    actualClient.sync()
+      .then(() => syncAll(enableClient, actualClient, store))
+      .then(results => {
+        console.log('Manual background sync complete:', JSON.stringify(results));
+      })
+      .catch(err => {
+        console.error('Manual background sync failed:', err);
+      });
+
+    res.json({ status: 'started' });
   });
 
   // Reset sync date (force full 90-day re-fetch on next sync)

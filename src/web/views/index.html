@@ -47,12 +47,20 @@
     async function syncNow() {
       const el = document.getElementById('sync-result');
       el.style.display = 'block';
-      el.textContent = 'Syncing...';
+      el.textContent = 'Sync started in background... You can refresh this page in a few minutes.';
       try {
         const res = await fetch('/sync/now', { method: 'POST' });
         const data = await res.json();
-        el.textContent = JSON.stringify(data, null, 2);
+        if (data.status === 'started') {
+          el.style.background = '#d4edda';
+          el.style.color = '#155724';
+          el.textContent = 'Sync is running in the background. Check logs or refresh this page later.';
+        } else {
+          el.textContent = JSON.stringify(data, null, 2);
+        }
       } catch (err) {
+        el.style.background = '#f8d7da';
+        el.style.color = '#721c24';
         el.textContent = 'Error: ' + err.message;
       }
     }
