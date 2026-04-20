@@ -80,16 +80,20 @@ export function createRouter({ enableClient, actualClient, store, config }) {
     let html = readView('index.html');
     let rows = '';
     if (mappings.length === 0) {
-      rows = '<tr><td colspan="5" style="text-align:center;color:#888">No bank connections yet</td></tr>';
+      rows = '<tr><td colspan="4" style="text-align:center;color:#888">No bank connections yet</td></tr>';
     } else {
       for (const m of mappings) {
-        const status = m.expired
-          ? '<span style="color:#e74c3c">Expired</span>'
-          : '<span style="color:#27ae60">Active</span>';
+        let nameHtml = `<strong>${m.displayName}</strong>`;
+        if (m.expired) {
+          nameHtml += '<br><span style="color:#e74c3c;font-size:0.8rem;font-weight:bold">Expired - Reconnect needed</span>';
+        } else if (m.validUntil) {
+          const expiryDate = new Date(m.validUntil).toLocaleDateString();
+          nameHtml += `<br><span style="color:#7f8c8d;font-size:0.75rem">Session valid until: ${expiryDate}</span>`;
+        }
+
         rows += `<tr>
-          <td>${m.displayName}</td>
+          <td>${nameHtml}</td>
           <td>${m.iban || '-'}</td>
-          <td>${status}</td>
           <td>${m.lastSyncDate || 'Never'}</td>
           <td>
             <form method="POST" action="/accounts/${m.id}/reset-sync" style="display:inline">
